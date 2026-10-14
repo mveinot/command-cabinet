@@ -1,0 +1,7 @@
+{
+    "name": "mvgrafx/command-cabinet",
+    "license": "proprietary",
+    "require": {
+        "web-auth/webauthn-lib": "^5.3"
+    }
+}

@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+$composerAutoload = dirname(__DIR__) . '/vendor/autoload.php';
+if (is_file($composerAutoload)) require_once $composerAutoload;
+
 session_name('command_cabinet');
 session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax']);
 
