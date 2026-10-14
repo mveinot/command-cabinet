@@ -1,0 +1,1 @@
+body[data-role="viewer"] a[href="/commands/new"],body[data-role="viewer"] .command-detail a.subtle-link[href$="/edit"],body[data-role="viewer"] .favorite{display:none}
