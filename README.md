@@ -16,6 +16,7 @@ Command Cabinet keeps the commands your team actually uses in one searchable pla
 - **Activity signal** — see who last copied a command and when.
 - **Portable administration** — administrator-only JSON export and import, including command history and account password hashes.
 - **Passkeys** — optional WebAuthn passkey registration and sign-in, while passwords and recovery remain available.
+- **Installable PWA** — install Command Cabinet as a standalone app with a privacy-preserving offline fallback.
 - **Terminal-inspired theme** — light, system, and green-terminal dark modes.
 
 ## Requirements
@@ -69,6 +70,12 @@ For local development, `http://localhost:8000` and `localhost` are valid passkey
 6. Ensure PHP can hand mail to the configured local Postfix/sendmail transport.
 
 Never expose the project root, `.env`, `vendor/`, or `database/` directory through the web server.
+
+## Progressive Web App
+
+Command Cabinet is installable as a Progressive Web App on supported browsers. The service worker caches only public application assets and an offline fallback page; it deliberately does **not** cache signed-in pages, API responses, or command data. This keeps shared operational information off device caches while preserving a clear offline experience.
+
+Desktop browser use remains unchanged. In supporting browsers, users may choose the browser’s install action to open Command Cabinet in a standalone app window.
 
 ## Using command templates
 
