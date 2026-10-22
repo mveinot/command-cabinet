@@ -1,0 +1,19 @@
+.mobile-menu{display:none}
+
+@media(max-width:900px){
+  .topbar{height:64px;padding:0 17px}
+  .header-actions.has-mobile-menu>.theme-control,.desktop-nav{display:none}
+  .mobile-menu{display:block;position:relative}
+  .mobile-menu summary{align-items:center;background:transparent;border:1px solid var(--line);border-radius:5px;color:var(--moss);cursor:pointer;display:flex;font-size:24px;height:38px;justify-content:center;list-style:none;width:42px}
+  .mobile-menu summary::-webkit-details-marker{display:none}
+  .mobile-menu summary:focus-visible{outline:2px solid var(--moss);outline-offset:2px}
+  .mobile-menu[open] summary{background:var(--mint)}
+  .mobile-menu-panel{background:var(--panel);border:1px solid var(--line);border-radius:7px;box-shadow:0 14px 28px rgba(20,35,27,.18);display:grid;gap:2px;padding:9px;position:absolute;right:0;top:calc(100% + 10px);width:min(290px,calc(100vw - 34px));z-index:4}
+  .mobile-menu-panel a,.mobile-menu-panel .link-button{border-radius:4px;color:var(--moss);display:block;font-size:15px;padding:10px;text-align:left;text-decoration:none;width:100%}
+  .mobile-menu-panel a:hover,.mobile-menu-panel .link-button:hover{background:var(--mint)}
+  .mobile-menu-panel .link-button{font:inherit}
+  .mobile-user{border-bottom:1px solid var(--line);color:var(--muted);font-size:13px;overflow:hidden;padding:6px 10px 10px;text-overflow:ellipsis;white-space:nowrap}
+  .mobile-menu-panel .theme-control{align-items:center;border-top:1px solid var(--line);color:var(--muted);display:flex;font-size:13px;gap:12px;justify-content:space-between;margin-top:5px;padding:10px}
+  .mobile-menu-panel .theme-control select{min-width:91px}
+  html[data-theme="dark"] .mobile-menu-panel{box-shadow:0 14px 28px rgba(0,0,0,.45)}
+}

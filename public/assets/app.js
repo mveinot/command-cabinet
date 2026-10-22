@@ -1,6 +1,6 @@
 (() => {
   if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js').catch(error => console.warn('Service worker registration failed.', error)));
-  const themeSelect = document.querySelector('#theme-select');
+  const themeSelects = document.querySelectorAll('[data-theme-select]');
   const themeStorageKey = 'command-cabinet-theme';
   const applyTheme = preference => {
     const theme = preference === 'system'
@@ -8,14 +8,17 @@
       : preference;
     document.documentElement.dataset.theme = theme;
   };
-  if (themeSelect) {
+  if (themeSelects.length) {
     const preference = localStorage.getItem(themeStorageKey) || 'system';
-    themeSelect.value = preference;
+    const syncThemeSelects = value => themeSelects.forEach(select => { select.value = value; });
+    syncThemeSelects(preference);
     applyTheme(preference);
-    themeSelect.addEventListener('change', event => {
-      localStorage.setItem(themeStorageKey, event.target.value);
-      applyTheme(event.target.value);
-    });
+    themeSelects.forEach(select => select.addEventListener('change', event => {
+      const value = event.target.value;
+      localStorage.setItem(themeStorageKey, value);
+      syncThemeSelects(value);
+      applyTheme(value);
+    }));
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
       if ((localStorage.getItem(themeStorageKey) || 'system') === 'system') applyTheme('system');
     });
