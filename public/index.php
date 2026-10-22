@@ -3,6 +3,7 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/app/bootstrap.php';
 require dirname(__DIR__) . '/app/layout.php';
 require dirname(__DIR__) . '/app/passkeys.php';
+require dirname(__DIR__) . '/app/sensitive_values.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
@@ -199,15 +200,16 @@ function admin_user_management_page(array $admin): never {
         <?php if(!$self): ?><form class="user-action" method="post" action="/admin/users" onsubmit="return confirm('Delete this user? Their command and revision attribution will be reassigned to you.')"><input type="hidden" name="_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="user_id" value="<?= $account['id'] ?>"><button class="link-button danger-button">Delete user</button></form><?php endif; ?>
       </div></article><?php endforeach; ?></section><?php page_end(); exit;
 }
-function command_form(?array $command = null): void {
-    $command ??= ['title'=>'','template'=>'','description'=>'','environment'=>'Linux / Bash','safety_level'=>'normal','last_verified_at'=>''];
-    $existing = $command['id'] ? tags_for((int)$command['id']) : ($command['tags'] ?? []);
+function command_form(?array $command = null, array $sensitiveValueWarnings = []): void {
+    $command ??= ['id'=>null,'title'=>'','template'=>'','description'=>'','environment'=>'Linux / Bash','safety_level'=>'normal','last_verified_at'=>''];
+    $existing = $command['tags'] ?? ($command['id'] ? tags_for((int)$command['id']) : []);
     page_start($command['id'] ? 'Edit command' : 'Add command'); ?>
     <div class="page-heading"><div><p class="eyebrow">Team catalog</p><h1><?= $command['id'] ? 'Edit command' : 'Add a command' ?></h1></div></div>
+    <?php if ($sensitiveValueWarnings): ?><aside class="notice error pii-warning"><strong>Command not saved.</strong> Potential hardcoded <?= e(implode(', ', $sensitiveValueWarnings)) ?> detected. Replace it with a <code>{{placeholder}}</code> before saving.</aside><?php endif; ?>
     <form class="command-form" method="post" action="<?= $command['id'] ? '/commands/'.$command['id'] : '/commands' ?>">
       <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
       <label>Title<input name="title" required maxlength="180" value="<?= e($command['title']) ?>" placeholder="Restart a Docker Compose stack"></label>
-      <label>Command template<textarea name="template" required rows="6" spellcheck="false" placeholder="ssh {{user}}@{{host}} \"cd {{project_path}} && git pull\""><?= e($command['template']) ?></textarea><small>Use <code>{{placeholder_key}}</code> for values people can fill in before copying.</small></label>
+      <label>Command template<textarea name="template" required rows="6" spellcheck="false" placeholder="ssh {{user}}@{{host}} \"cd {{project_path}} && git pull\""><?= e($command['template']) ?></textarea><small>Use <code>{{placeholder_key}}</code> for values people can fill in before copying. Potentially sensitive hardcoded values are blocked from being saved.</small></label>
       <div class="form-grid"><label>Environment<input name="environment" required maxlength="80" value="<?= e($command['environment']) ?>" placeholder="Linux / Bash"></label><label>Safety level<select name="safety_level"><option value="normal" <?= $command['safety_level']==='normal'?'selected':'' ?>>Normal</option><option value="caution" <?= $command['safety_level']==='caution'?'selected':'' ?>>Caution</option><option value="destructive" <?= $command['safety_level']==='destructive'?'selected':'' ?>>Destructive</option></select></label><label>Last verified<input type="date" name="last_verified_at" value="<?= e((string)$command['last_verified_at']) ?>"></label></div>
       <label>Tags<input name="tags" maxlength="300" value="<?= e(implode(', ', $existing)) ?>" placeholder="docker, deployment, maintenance"><small>Separate tags with commas.</small></label>
       <label>Description / operating notes<textarea id="notes-markdown" name="description" rows="6" placeholder="Explain prerequisites, expected result, and important warnings."><?= e($command['description']) ?></textarea><small>Markdown is supported: headings, lists, links, emphasis, and code. Plain text continues to display normally.</small></label>
@@ -223,6 +225,12 @@ function save_command(?int $id = null): never {
     $safety = $_POST['safety_level'] ?? 'normal'; $verified = $_POST['last_verified_at'] ?: null;
     if (!$title || !$template || !$environment || !in_array($safety, ['normal','caution','destructive'], true)) { flash('error', 'Title, template, and environment are required.'); redirect($id ? "/commands/$id/edit" : '/commands/new'); }
     $keys = placeholder_keys($template); $metadata = $_POST['placeholders'] ?? [];
+    $warnings = sensitive_command_value_warnings(['title'=>$title,'template'=>$template,'description'=>$description,'tags'=>(string)($_POST['tags'] ?? ''),'placeholders'=>$metadata]);
+    if ($warnings) {
+        $draft = ['id'=>$id,'title'=>$title,'template'=>$template,'description'=>$description,'environment'=>$environment,'safety_level'=>$safety,'last_verified_at'=>$verified,'tags'=>array_filter(array_map('trim',explode(',',(string)($_POST['tags'] ?? '')))),'placeholders'=>[]];
+        foreach ($metadata as $key => $value) if (is_array($value)) $draft['placeholders'][$key] = ['label'=>(string)($value['label'] ?? ''),'type'=>(string)($value['type'] ?? 'text'),'help'=>(string)($value['help'] ?? ''),'example'=>(string)($value['example'] ?? ''),'options'=>preg_split('/\R/',(string)($value['options'] ?? '')),'required'=>isset($value['required'])];
+        command_form($draft, $warnings); exit;
+    }
     db()->beginTransaction();
     try {
         if ($id) {
